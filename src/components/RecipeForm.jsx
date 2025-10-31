@@ -8,7 +8,7 @@ import {
   createRecipe,
   updateRecipe,
 } from "../api/api";
-import { Plus, Trash2, MoveUp, MoveDown, X } from "lucide-react";
+import { Plus, Trash2, MoveUp, MoveDown, X, Star, Minus } from "lucide-react";
 
 const RecipeForm = ({ onClose, recipeToEdit = null }) => {
   const { user } = useAuth();
@@ -230,26 +230,14 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-2 sm:p-4">
-      <div className="bg-white rounded-lg w-full max-w-2xl max-h-[95vh] overflow-y-auto shadow-xl flex flex-col">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="rounded-xl w-full max-w-md flex flex-col gap-4 p-6 shadow-xl bg-white">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b px-4 py-3 flex items-center justify-between z-10">
-          <div>
-            <h1 className="text-lg font-semibold">
-              {isEditing ? "Editar Receta" : "Nueva Receta"}
-            </h1>
-            <p className="text-xs text-gray-500">{user?.email}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 p-1"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <h1 className="text-2xl font-bold text-center">
+          {isEditing ? "Editar Receta" : "Nueva Receta"}
+        </h1>
 
-        <div className="p-4 space-y-4">
+        <div className=" space-y-4">
           {/* Información básica */}
           <div className="space-y-3">
             <input
@@ -257,33 +245,37 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
               placeholder="Nombre de la receta"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
+            <div className="flex gap-2 items-center justify-between ">
+              <div className="grid grid-cols-2 gap-2">
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="border py-1 bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium rounded-full px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {TIPOS_RECETA.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
+                </select>
 
-            <div className="grid grid-cols-2 gap-2">
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {TIPOS_RECETA.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-
-              <input
-                type="number"
-                placeholder="Valoración"
-                min="0"
-                max="5"
-                step="0.5"
-                value={rating}
-                onChange={(e) => setRating(e.target.value)}
-                className="border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                <div className="flex gap-1 mt-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star
+                      key={n}
+                      className={`w-6 h-6 cursor-pointer ${
+                        rating >= n
+                          ? "text-yellow-400 fill-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                      onClick={() => setRating(n)}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -325,7 +317,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                   placeholder="Ingrediente"
                   value={ingredientName}
                   onChange={(e) => setIngredientName(e.target.value)}
-                  className="w-full border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded-full bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {ingredientSuggestions.length > 0 && (
                   <ul className="absolute top-full left-0 right-0 mt-1 bg-white border rounded shadow-lg max-h-32 overflow-auto z-50">
@@ -346,18 +338,18 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                 placeholder="Cant."
                 value={ingredientQuantity}
                 onChange={(e) => setIngredientQuantity(e.target.value)}
-                className="w-16 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-16 border rounded-full bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <input
                 type="text"
                 placeholder="Un."
                 value={ingredientUnit}
                 onChange={(e) => setIngredientUnit(e.target.value)}
-                className="w-14 border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-14 border rounded-full bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button
                 onClick={handleAddIngredient}
-                className="bg-blue-500 text-white px-2 rounded hover:bg-blue-600"
+                className="bg-[var(--button-color)] text-white px-2 rounded-full hover:bg-[var(--button-color-hover)]"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -373,7 +365,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                 {tags.map((t) => (
                   <span
                     key={t.id}
-                    className="bg-gray-200 text-gray-700 px-2 py-1 rounded text-xs flex items-center gap-1"
+                    className="bg-[var(--tag-color)]/20 text-[var(--tag-color)] px-2 py-1 rounded text-xs flex items-center gap-1"
                   >
                     {t.name}
                     <button
@@ -381,7 +373,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                       onClick={() =>
                         setTags(tags.filter((tag) => tag.id !== t.id))
                       }
-                      className="hover:text-red-600"
+                      className="hover:text-red-600 "
                     >
                       <X className="w-3 h-3" />
                     </button>
@@ -397,7 +389,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                   placeholder="Nueva etiqueta"
                   value={tagName}
                   onChange={(e) => setTagName(e.target.value)}
-                  className="w-full border rounded px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full border rounded-full bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 {tagSuggestions.length > 0 && (
                   <ul className="absolute top-full left-0 right-0 mt-1 bg-white border rounded shadow-lg max-h-32 overflow-auto z-50">
@@ -415,7 +407,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
               </div>
               <button
                 onClick={handleAddTag}
-                className="bg-blue-500 text-white px-2 rounded hover:bg-blue-600"
+                className="bg-[var(--button-color)] text-white px-2 rounded-full hover:bg-blue-600"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -461,7 +453,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                       onChange={(e) =>
                         handleUpdateStep(step.tempId, e.target.value)
                       }
-                      className="flex-1 border rounded px-2 py-1.5 text-sm min-h-[48px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 border rounded bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm min-h-[48px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
 
                     <button
@@ -476,7 +468,7 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
               </div>
             )}
 
-            <div className="flex gap-2 items-start border-2 border-dashed rounded p-2">
+            <div className="flex gap-2 items-start rounded ">
               <span className="font-medium text-gray-600 text-sm min-w-[1.5rem] pt-1.5">
                 {steps.length + 1}.
               </span>
@@ -488,14 +480,14 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
                     handleAddStep(e);
                   }
                 }}
-                className="flex-1 border rounded px-2 py-1.5 text-sm min-h-[48px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border rounded bg-[var(--input)]/50 border-[var(--input)] placeholder:text-gray-400 placeholder:font-medium px-2 py-1.5 text-sm min-h-[48px] resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Escribe el siguiente paso..."
               />
               <button
                 type="button"
                 onClick={handleAddStep}
                 disabled={!currentStepText.trim()}
-                className="bg-blue-500 text-white p-1.5 rounded hover:bg-blue-600 disabled:bg-gray-300"
+                className="bg-[var(--button-color)] text-white p-1.5 rounded-full hover:bg-blue-600 disabled:bg-gray-300"
               >
                 <Plus className="w-4 h-4" />
               </button>
@@ -503,18 +495,18 @@ const RecipeForm = ({ onClose, recipeToEdit = null }) => {
           </div>
 
           {/* Botones */}
-          <div className="flex gap-2 pt-2 border-t">
+          <div className="flex gap-2 pt-2 ">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm font-medium"
+              className="flex-1 py-3 px-4 rounded-lg font-bold bg-[var(--button-added-color)] text-white hover:bg-opacity-80"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleSubmit}
-              className="flex-1 px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
+              className="flex-1 py-3 px-4 rounded-lg font-bold bg-[var(--button-color)]/30 text-[var(--button-color)] hover:bg-opacity-90"
             >
               {isEditing ? "Actualizar" : "Guardar"}
             </button>

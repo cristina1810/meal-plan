@@ -14,9 +14,14 @@ import {
   Check,
   ChevronDown,
   ShoppingBasket,
+  Trash2,
 } from "lucide-react";
 import Sidebar from "../components/Sidebar";
 import { TIPOS_INGREDIENTES } from "../constants";
+import { useSwipeable } from "react-swipeable";
+
+// Componente separado para cada card de ingrediente
+import IngredientInCart from "../components/IngredientInCart";
 
 export default function ListaCompra() {
   const { user } = useAuth();
@@ -40,6 +45,7 @@ export default function ListaCompra() {
   const [brandSuggestions, setBrandSuggestions] = useState([]);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
   const [ingredientSelected, setIngredientSelected] = useState(false);
+  const [swipedItem, setSwipedItem] = useState(null);
 
   // ---------------------------
   // CARGA INICIAL DE TIENDAS E INGREDIENTES
@@ -59,7 +65,6 @@ export default function ListaCompra() {
     async function loadIngredients() {
       try {
         const data = await fetchIngredientsByStore(selectedStore, user.id);
-        console.log(data);
         const withCartState = data.map((i) => ({
           ...i,
           addedToCart: false,
@@ -127,8 +132,8 @@ export default function ListaCompra() {
 
   const handleSelectIngredient = (ingredient) => {
     setSelectedIngredient(ingredient);
-    setSearchTerm(ingredient.name); // actualiza el input
-    setIngredientSuggestions([]); // cierra la lista de sugerencias
+    setSearchTerm(ingredient.name);
+    setIngredientSuggestions([]);
   };
 
   const handleAddExistingIngredient = async () => {
@@ -140,7 +145,6 @@ export default function ListaCompra() {
         user.id
       );
 
-      // Evitamos duplicados en el estado local
       setIngredients((prev) => {
         const exists = prev.some((i) => i.id === selectedIngredient.id);
         if (exists) return prev;
@@ -180,7 +184,6 @@ export default function ListaCompra() {
     try {
       let brandId = null;
 
-      // 1️⃣ Crear la marca si no existe
       if (newIngredient.brand) {
         const { data: existingBrand, error: brandError } = await supabase
           .from("brands")
@@ -204,7 +207,6 @@ export default function ListaCompra() {
         }
       }
 
-      // 2️⃣ Crear ingrediente
       const { data: insertedIngredient, error: ingredientError } =
         await supabase
           .from("ingredients")
@@ -223,9 +225,7 @@ export default function ListaCompra() {
         return;
       }
 
-      // 3️⃣ Insertar/upsert en ingredient_prices y shopping_lists para todas las tiendas
       for (const store of stores) {
-        // ingredient_prices
         await supabase.from("ingredient_prices").upsert(
           {
             ingredient_id: insertedIngredient.id,
@@ -237,7 +237,6 @@ export default function ListaCompra() {
           { onConflict: ["ingredient_id", "store_id", "user_id"] }
         );
 
-        // shopping_lists
         await supabase.from("shopping_lists").upsert(
           {
             ingredient_id: insertedIngredient.id,
@@ -249,7 +248,6 @@ export default function ListaCompra() {
         );
       }
 
-      // 4️⃣ Actualizar estado local
       setIngredients((prev) => [
         ...prev,
         { ...insertedIngredient, addedToCart: false, amount: 1, storePrice: 0 },
@@ -292,6 +290,31 @@ export default function ListaCompra() {
       setIngredients((prev) => prev.filter((i) => i.id !== id));
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleDeleteIngredient = async (id) => {
+    if (!selectedStore || !user?.id) return;
+    if (
+      !window.confirm(
+        "¿Estás seguro de que quieres eliminar este ingrediente de la lista?"
+      )
+    )
+      return;
+
+    try {
+      await supabase
+        .from("shopping_lists")
+        .delete()
+        .eq("ingredient_id", id)
+        .eq("store_id", selectedStore)
+        .eq("user_id", user.id);
+
+      setIngredients((prev) => prev.filter((i) => i.id !== id));
+      setSwipedItem(null);
+    } catch (err) {
+      console.error(err);
+      alert("Error al eliminar el ingrediente.");
     }
   };
 
@@ -416,7 +439,7 @@ export default function ListaCompra() {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setIngredientSelected(false); // volvemos a permitir sugerencias al escribir
+                  setIngredientSelected(false);
                 }}
               />
               {/* Botón para añadir ingrediente existente */}
@@ -443,8 +466,8 @@ export default function ListaCompra() {
                     onClick={() => {
                       setSelectedIngredient(ing);
                       setSearchTerm(ing.name);
-                      setIngredientSelected(true); // bloquea lista al seleccionar
-                      setIngredientSuggestions([]); // opcional, limpia el array
+                      setIngredientSelected(true);
+                      setIngredientSuggestions([]);
                     }}
                   >
                     {ing.name} {ing.brand ? `(${ing.brand})` : ""}
@@ -542,84 +565,18 @@ export default function ListaCompra() {
 
               {openTypes[type] &&
                 items.map((i) => (
-                  <div
-                    className="gap-2 items-center p-4 shadow-md rounded my-2"
+                  <IngredientInCart
                     key={i.id}
-                  >
-                    <div className="flex justify-between items-center">
-                      <p className="text-lg font-medium">{i.name}</p>
-                      {i.favorite_store?.id &&
-                        i.favorite_store?.id !== selectedStore && (
-                          <p className="text-[var(--text-favorite-store-color)] bg-[var(--favorite-store-color)] px-3 rounded-full">
-                            {i.favorite_store?.name}
-                          </p>
-                        )}
-                    </div>
-                    <div className="flex gap-2 items-center justify-between">
-                      <div className="flex gap-2">
-                        <div className="flex items-center gap-2">
-                          <button
-                            className="bg-red-600 text-white p-1 rounded-full"
-                            onClick={() => handleAmountChange(i.id, -1)}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          {i.amount}
-                          <button
-                            className="bg-green-600 text-white p-1 rounded-full"
-                            onClick={() => handleAmountChange(i.id, 1)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                          ud/s
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <input
-                            className="border border-[var(--input)] text-end px-2 w-10"
-                            type="number"
-                            value={i.storePrice || 0}
-                            onChange={(e) =>
-                              handlePriceChange(
-                                i.id,
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            step="0.01"
-                          />
-                          €
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 ">
-                        {i.storePrice === 0 || i.storePrice === null ? (
-                          <button
-                            onClick={() => markAsUnavailable(i.id)}
-                            className="p-2 rounded bg-[var(--urgente)]/40 text-[var(--urgente)]"
-                          >
-                            Marcar no disponible
-                          </button>
-                        ) : (
-                          <button
-                            className="p-2 rounded"
-                            onClick={() => toggleCart(i.id)}
-                          >
-                            {i.addedToCart ? (
-                              <div className="flex p-2 rounded items-center gap-1.5 bg-[var(--button-added-color)] text-white ">
-                                <Check className="w-4 h-4" /> Añadido
-                              </div>
-                            ) : (
-                              <div className="flex p-2 rounded items-center gap-1.5 bg-[var(--button-color)] text-white">
-                                <ShoppingBasket
-                                  className="w-4 h-4"
-                                  strokeWidth={1.5}
-                                />{" "}
-                                Añadir
-                              </div>
-                            )}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                    ingredient={i}
+                    selectedStore={selectedStore}
+                    swipedItem={swipedItem}
+                    setSwipedItem={setSwipedItem}
+                    onDelete={handleDeleteIngredient}
+                    onAmountChange={handleAmountChange}
+                    onPriceChange={handlePriceChange}
+                    onToggleCart={toggleCart}
+                    onMarkUnavailable={markAsUnavailable}
+                  />
                 ))}
             </div>
           ))}

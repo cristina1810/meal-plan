@@ -9,6 +9,7 @@ import ShoppingList from "./pages/ShoppingList.jsx";
 import WeeklyPlan from "./pages/WeeklyPlan.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Recipe from "./pages/Recipe.jsx";
+import Config from "./pages/Config.jsx";
 
 export default function AppRoutes() {
   return (
@@ -29,6 +30,7 @@ export default function AppRoutes() {
           <Route path="shopping-list" element={<ShoppingList />} />
           <Route path="weekly-plan" element={<WeeklyPlan />} />
           <Route path="recipe/:id" element={<Recipe />} />
+          <Route path="config" element={<Config />} />
         </Route>
       </Routes>
     </BrowserRouter>

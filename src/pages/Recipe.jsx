@@ -5,6 +5,8 @@ import { useAuth } from "../context/AuthContext";
 import { getRecipeById } from "../api/api";
 import { Star, StarHalf } from "lucide-react";
 import RecipeForm from "../components/RecipeForm";
+import { Menu, Pencil } from "lucide-react";
+import Sidebar from "../components/Sidebar";
 
 const Recipe = () => {
   const { id } = useParams();
@@ -13,6 +15,7 @@ const Recipe = () => {
   const [loading, setLoading] = useState(true);
   const [checkedItems, setCheckedItems] = useState({});
   const [showEditForm, setShowEditForm] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const loadRecipe = async () => {
     setLoading(true);
@@ -42,50 +45,53 @@ const Recipe = () => {
 
   return (
     <>
-      <div className="p-4 max-w-3xl mx-auto border rounded shadow">
-        <div className="mb-4 flex justify-between items-center">
-          <h1 className="text-3xl font-bold">{recipe.name}</h1>
+      <div className="flex items-center gap-2 p-4 sticky top-0 bg-[var(--bg-light)]/80 backdrop-blur-sm justify-between">
+        <Menu onClick={() => setSidebarOpen(true)} />
+        <div className="flex items-center flex-col justify-center gap-2">
+          <h1 className="text-2xl font-bold">{recipe.name}</h1>
+          <div className="flex items-center gap-1">
+            {(() => {
+              const fullStars = Math.floor(recipe.rating);
+              const halfStar = recipe.rating % 1 >= 0.5;
 
-          <button
-            onClick={() => setShowEditForm(true)}
-            className="bg-[var(--button-color)] text-white px-4 py-2 rounded hover:bg-[var(--button-added-color)]"
-          >
-            Editar
-          </button>
+              return (
+                <>
+                  {[...Array(fullStars)].map((_, i) => (
+                    <Star
+                      key={i}
+                      className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]"
+                    />
+                  ))}
+                  {halfStar && (
+                    <StarHalf className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]" />
+                  )}
+                  {[...Array(5 - fullStars - (halfStar ? 1 : 0))].map(
+                    (_, i) => (
+                      <Star
+                        key={i + fullStars + 1}
+                        className="w-4 h-4 text-gray-300"
+                      />
+                    )
+                  )}
+                </>
+              );
+            })()}
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          {(() => {
-            const fullStars = Math.floor(recipe.rating);
-            const halfStar = recipe.rating % 1 >= 0.5;
-
-            return (
-              <>
-                {[...Array(fullStars)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]"
-                  />
-                ))}
-                {halfStar && (
-                  <StarHalf className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]" />
-                )}
-                {[...Array(5 - fullStars - (halfStar ? 1 : 0))].map((_, i) => (
-                  <Star
-                    key={i + fullStars + 1}
-                    className="w-4 h-4 text-gray-300"
-                  />
-                ))}
-              </>
-            );
-          })()}
-        </div>
-        <p className="mb-2">{recipe.type || "Sin categoría"}</p>
-        <div className="mb-4 flex gap-2">
-          {recipe.tags?.length > 0 && (
-            <p className="text-gray-600 bg-gray-200 px-3 rounded">
-              {recipe.tags.map((t) => t.name).join(", ")}
-            </p>
-          )}
+        <button onClick={() => setShowEditForm(true)} className="">
+          <Pencil className="w-5 h-5" />
+        </button>
+      </div>
+      <div className="p-4 max-w-3xl mt-5 bg-white mx-4 rounded shadow">
+        <div className="flex items-center gap-2">
+          <div className="mb-2 flex gap-2 flex-wrap">
+            {recipe.tags?.length > 0 && (
+              <p className="text-gray-600 bg-gray-200 px-3 rounded">
+                {recipe.tags.map((t) => t.name).join(", ")}
+              </p>
+            )}
+          </div>
+          <p className="mb-2 ms-auto">{recipe.type || "Sin categoría"}</p>
         </div>
         <h2 className="text-2xl font-semibold mb-2">Ingredientes</h2>
         <div className="mb-4">
@@ -108,7 +114,8 @@ const Recipe = () => {
                     checkedItems[key] ? "line-through text-gray-400" : ""
                   }
                 >
-                  {i.name} {i.quantity} {i.unit}
+                  <span className="font-semibold">{i.name}</span> {i.quantity}{" "}
+                  {i.unit}
                 </span>
               </label>
             );
@@ -121,8 +128,9 @@ const Recipe = () => {
             {recipe.recipe_steps.map((step, idx) => {
               const key = `step-${idx}`;
               return (
-                <label key={idx} className="flex items-center gap-2">
+                <label key={idx} className="flex items-start  gap-2">
                   <input
+                    className="mt-1.5 rounded-full"
                     type="checkbox"
                     checked={!!checkedItems[key]}
                     onChange={() =>
@@ -151,6 +159,7 @@ const Recipe = () => {
       {showEditForm && (
         <RecipeForm recipeToEdit={recipe} onClose={handleCloseEdit} />
       )}
+      {sidebarOpen && <Sidebar onClose={() => setSidebarOpen(false)} />}
     </>
   );
 };

@@ -436,6 +436,16 @@ export async function fetchStores() {
   return data;
 }
 // Añade esta función a tu src/api/api.js
+// Eliminar un ingrediente completamente de la base de datos
+export async function deleteIngredient(id) {
+  const { data, error } = await supabase
+    .from("ingredients")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw error;
+  return data;
+}
 
 export async function updateRecipe(recipeId, payload) {
   const {
