@@ -124,7 +124,7 @@ export default function Ingredients() {
       </div>
 
       {/* LISTA DE INGREDIENTES */}
-      <div className="grid gap-4">
+      <div className="grid gap-4 mx-2">
         {store.ingredients?.length === 0 && !store.loading ? (
           <p>No hay ingredientes.</p>
         ) : tipoSeleccionado ? (
