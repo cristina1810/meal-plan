@@ -124,7 +124,7 @@ export default function Ingredients() {
       </div>
 
       {/* LISTA DE INGREDIENTES */}
-      <div className="grid gap-4 mx-2">
+      <div className="grid gap-4 mx-4">
         {store.ingredients?.length === 0 && !store.loading ? (
           <p>No hay ingredientes.</p>
         ) : tipoSeleccionado ? (
@@ -139,7 +139,7 @@ export default function Ingredients() {
             ))
         ) : (
           Object.entries(groupedIngredients).map(([tipo, ingredientes]) => (
-            <div key={tipo} className="mb-2 mx-2">
+            <div key={tipo} className="mb-2 ">
               <button
                 className="w-full text-left font-semibold text-lg py-2 px-2 bg-[var(--pill-unselected-color)] rounded-full flex justify-between items-center"
                 onClick={() =>
