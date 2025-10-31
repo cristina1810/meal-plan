@@ -130,7 +130,7 @@ const Recipe = () => {
               return (
                 <label key={idx} className="flex items-start  gap-2">
                   <input
-                    className="mt-1.5 rounded-full"
+                    className="mt-1.5"
                     type="checkbox"
                     checked={!!checkedItems[key]}
                     onChange={() =>

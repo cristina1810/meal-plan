@@ -71,7 +71,7 @@ const IngredientInCart = ({
             </div>
             <div className="flex items-center gap-2">
               <input
-                className="border border-[var(--input)] text-end px-2 w-10"
+                className="border border-[var(--input)] text-end px-2 w-13"
                 type="number"
                 value={ingredient.storePrice || 0}
                 onChange={(e) =>
@@ -86,7 +86,7 @@ const IngredientInCart = ({
             {ingredient.storePrice === 0 || ingredient.storePrice === null ? (
               <button
                 onClick={() => onMarkUnavailable(ingredient.id)}
-                className="p-2 rounded bg-[var(--urgente)]/40 text-[var(--urgente)]"
+                className=" px-2 rounded bg-[var(--urgente)]/40 text-[var(--urgente)]"
               >
                 Marcar no disponible
               </button>
