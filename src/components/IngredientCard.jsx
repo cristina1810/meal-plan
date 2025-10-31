@@ -1,25 +1,80 @@
-// src/components/IngredientCard.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../context/AuthContext";
 import useGlobalReducer from "../context/useGlobalReducer";
-import { addIngredientToAllLists } from "../api/shoppingLists";
+import {
+  addIngredientToAllStores,
+  removeIngredientFromShoppingList,
+  fetchUserShoppingList,
+  fetchStores,
+  updateIngrediente,
+} from "../api/api";
+import { Star, StarHalf, Plus, ShoppingBasket, Check } from "lucide-react";
 
-export default function IngredientCard({ ingredient }) {
+export default function IngredientCard({
+  ingredient: initialIngredient,
+  onEdit,
+}) {
+  const { user } = useAuth();
   const { store, dispatch } = useGlobalReducer();
-  const [loading, setLoading] = useState(false);
 
-  const handleAddToAll = async () => {
-    if (!store.user)
-      return alert("Inicia sesión para usar listas de la compra.");
+  // --- Estados locales ---
+  const [ingredient, setIngredient] = useState(initialIngredient);
+  const [loading, setLoading] = useState(false);
+  const [showPrices, setShowPrices] = useState(false);
+
+  // --- Inicializar ingrediente si cambian los props ---
+  useEffect(() => {
+    setIngredient(initialIngredient);
+  }, [initialIngredient]);
+
+  // --- Lista de la compra ---
+  const inShoppingList = store.shoppingList?.includes(ingredient.id) ?? false;
+
+  useEffect(() => {
+    async function loadShoppingList() {
+      if (!user?.id) return;
+      try {
+        const list = await fetchUserShoppingList(user.id);
+        dispatch({ type: "SET_SHOPPING_LIST", payload: list });
+      } catch (err) {
+        console.error("Error cargando shopping_list:", err);
+      }
+    }
+    loadShoppingList();
+  }, [user, dispatch]);
+
+  // --- Tiendas ---
+  useEffect(() => {
+    async function loadStores() {
+      if (store.stores.length === 0) {
+        try {
+          const stores = await fetchStores();
+          dispatch({ type: "SET_STORES", payload: stores });
+        } catch (err) {
+          console.error("Error cargando tiendas:", err);
+        }
+      }
+    }
+    loadStores();
+  }, [store.stores, dispatch]);
+
+  // --- Manejar añadir/eliminar de la lista de compra ---
+  const handleButtonClick = async (e) => {
+    e.stopPropagation();
+    if (!user?.id) {
+      alert("Debes iniciar sesión para gestionar la lista de compra.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const inserted = await addIngredientToAllLists(
-        store.user.id,
-        ingredient.id,
-        { quantity: 1, unit: "u" }
-      );
-      // Opcional: re-fetch shopping lists o actualizar localmente
-      dispatch({ type: "SET_INGREDIENTS", payload: inserted });
-      alert(`Añadido a ${inserted.length} listas.`);
+      if (inShoppingList) {
+        await removeIngredientFromShoppingList(user.id, ingredient.id);
+        dispatch({ type: "REMOVE_FROM_SHOPPING_LIST", payload: ingredient.id });
+      } else {
+        const inserted = await addIngredientToAllStores(ingredient.id, user.id);
+        dispatch({ type: "ADD_TO_SHOPPING_LIST", payload: ingredient.id });
+      }
     } catch (err) {
       console.error(err);
       alert("Error: " + (err.message ?? err));
@@ -28,33 +83,197 @@ export default function IngredientCard({ ingredient }) {
     }
   };
 
+  // --- Manejar cambios de estado ---
+  const handleStatusChange = async (e) => {
+    const newStatus = e.target.value;
+    setIngredient((prev) => ({ ...prev, status: newStatus }));
+    try {
+      await updateIngrediente(ingredient.id, { status: newStatus });
+      dispatch({
+        type: "UPDATE_INGREDIENT",
+        payload: { id: ingredient.id, updates: { status: newStatus } },
+      });
+    } catch (err) {
+      console.error("Error actualizando estado:", err);
+    }
+  };
+
+  // --- Manejar tienda favorita ---
+  const handleFavoriteChange = async (e) => {
+    const storeId = e.target.value || null;
+    setIngredient((prev) => ({
+      ...prev,
+      favorite_store: store.stores.find((s) => s.id === storeId) || null,
+    }));
+    try {
+      const updated = await updateIngrediente(ingredient.id, {
+        favorite_store: storeId,
+      });
+      dispatch({
+        type: "UPDATE_INGREDIENT",
+        payload: { id: ingredient.id, updates: updated },
+      });
+    } catch (err) {
+      console.error("Error actualizando tienda favorita:", err);
+    }
+  };
+
+  // --- Precio mínimo ---
+  const availablePrices = ingredient.ingredient_prices?.filter(
+    (p) => p.available !== false && p.price != null
+  );
+  const minPrice = availablePrices?.length
+    ? Math.min(...availablePrices.map((p) => p.price))
+    : null;
+
   return (
-    <article
-      className="ingredient-card"
-      style={{ border: "1px solid #ddd", padding: 12, borderRadius: 6 }}
+    <div
+      className="bg-white p-4 rounded shadow-md  my-2"
+      onClick={(e) => {
+        // Evita abrir el formulario al pulsar botones o selects dentro de la card
+        const tag = e.target.tagName;
+        if (["SELECT", "BUTTON", "OPTION"].includes(tag)) return;
+        onEdit?.(ingredient); // Llama a la función pasada por props
+      }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <div>
-          <h4 style={{ margin: 0 }}>{ingredient.name}</h4>
-          <small>
-            {ingredient.brand ?? ""} •{" "}
-            {Array.isArray(ingredient.type)
-              ? ingredient.type.join(", ")
-              : ingredient.type}
-          </small>
+      {/* NOMBRE, MARCA Y VALORACIÓN */}
+      <div className="flex justify-between">
+        <div className="flex items-center gap-2">
+          <h3 className="text-base font-semibold">{ingredient.name}</h3>
+          <p className="text-base text-gray-500 font-medium">
+            {ingredient.brand?.name ?? "Sin marca"}
+          </p>
         </div>
-        <div>
-          <button onClick={handleAddToAll} disabled={loading}>
-            {loading ? "Añadiendo..." : "Añadir a todas las listas"}
-          </button>
+        <div className="flex items-center gap-1">
+          {(() => {
+            const fullStars = Math.floor(ingredient.rating);
+            const halfStar = ingredient.rating % 1 >= 0.5;
+
+            return (
+              <>
+                {[...Array(fullStars)].map((_, i) => (
+                  <Star
+                    key={i}
+                    className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]"
+                  />
+                ))}
+                {halfStar && (
+                  <StarHalf className="w-4 h-4 text-[var(--star-color)] fill-[var(--star-color)]" />
+                )}
+                {[...Array(5 - fullStars - (halfStar ? 1 : 0))].map((_, i) => (
+                  <Star
+                    key={i + fullStars + 1}
+                    className="w-4 h-4 text-gray-300"
+                  />
+                ))}
+              </>
+            );
+          })()}
         </div>
       </div>
-    </article>
+      {/* ESTADO Y TIENDA FAVORITA */}
+      <div className="flex justify-between mt-2 gap-2">
+        <select
+          value={ingredient.status}
+          onChange={handleStatusChange}
+          className={`border-none outline-none appearance-none rounded px-2  [text-align-last:center] ${
+            ingredient.status === "Disponible"
+              ? "bg-[var(--available)]/20 text-[var(--available)]"
+              : ingredient.status === "Faltante"
+              ? "bg-[var(--faltante)]/20 text-[var(--faltante)]"
+              : ingredient.status === "Urgente"
+              ? "bg-[var(--urgente)]/20 text-[var(--urgente)]"
+              : ""
+          }`}
+        >
+          <option value="">Sin estado</option>
+          <option value="Disponible">Disponible</option>
+          <option value="Faltante">Faltante</option>
+          <option value="Urgente">Urgente</option>
+        </select>
+
+        <select
+          value={ingredient.favorite_store?.id || ""}
+          onChange={handleFavoriteChange}
+          style={{ width: "auto" }}
+          className="w-auto border-none outline-none appearance-none rounded [text-align-last:center] bg-[var(--favorite-store-color)]/20 text-[var(--text-favorite-store-color)] "
+        >
+          <option value="">Sin tienda favorita</option>
+          {store.stores?.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {/* PRECIOS */}
+      {ingredient.ingredient_prices?.length > 0 && (
+        <div className="mt-2">
+          {showPrices && (
+            <ul className="flex flex-col gap-1">
+              <p className="text-center font-semibold">Precios</p>
+              {ingredient.ingredient_prices.map((p) => {
+                const isMin = p.price === minPrice && p.available;
+                return (
+                  <li
+                    key={p.id}
+                    className={`flex justify-between items-center p-1 rounded-sm px-2 ${
+                      isMin
+                        ? "font-bold bg-[var(--price-min-color)]/20 text-[var(--price-min-color)]"
+                        : ""
+                    }`}
+                  >
+                    <span>{p.store?.name || "Tienda desconocida"}</span>
+                    <span>
+                      {p.price != null && p.price !== 0 ? `${p.price} €` : ""}{" "}
+                      <span className="text-gray-500 font-medium">
+                        {p.available === false && "No disponible"}
+                      </span>
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <div className="flex items-center gap-2 justify-between mt-2">
+            <button
+              className="px-3 py-1 font-medium"
+              onClick={() => setShowPrices(!showPrices)}
+            >
+              {showPrices ? "Ocultar precios" : "Mostrar precios"}
+            </button>
+
+            <button
+              onClick={handleButtonClick}
+              disabled={loading}
+              className={`text-white border-none py-2 px-4 rounded cursor-pointer transition-colors duration-200 ${
+                loading ? "bg-gray-400 cursor-not-allowed opacity-60" : ""
+              } ${
+                inShoppingList
+                  ? "bg-[var(--button-added-color)] hover:bg-[var(--button-added-color)]"
+                  : "bg-[var(--button-color)] hover:bg-[var(--button-added-color)]"
+              }`}
+            >
+              {loading ? (
+                "Procesando..."
+              ) : inShoppingList ? (
+                <div className="flex items-center gap-2 font-medium">
+                  <Check className="w-4 h-4" strokeWidth={1.5} />
+                  Añadido
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 font-medium">
+                  <ShoppingBasket className="w-4 h-4" strokeWidth={1.5} />
+                  Añadir
+                </div>
+              )}
+            </button>
+          </div>
+        </div>
+      )}
+      {ingredient.ingredient_prices?.length === 0 && (
+        <p>Sin precios registrados</p>
+      )}
+    </div>
   );
 }

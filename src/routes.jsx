@@ -5,9 +5,10 @@ import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Ingredients from "./pages/Ingredients.jsx";
 import Recipes from "./pages/Recipes.jsx";
-import ShoppingLists from "./pages/ShoppingLists.jsx";
+import ShoppingList from "./pages/ShoppingList.jsx";
 import WeeklyPlan from "./pages/WeeklyPlan.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Recipe from "./pages/Recipe.jsx";
 
 export default function AppRoutes() {
   return (
@@ -25,8 +26,9 @@ export default function AppRoutes() {
         >
           <Route index element={<Ingredients />} />
           <Route path="recipes" element={<Recipes />} />
-          <Route path="shopping-lists" element={<ShoppingLists />} />
+          <Route path="shopping-list" element={<ShoppingList />} />
           <Route path="weekly-plan" element={<WeeklyPlan />} />
+          <Route path="recipe/:id" element={<Recipe />} />
         </Route>
       </Routes>
     </BrowserRouter>

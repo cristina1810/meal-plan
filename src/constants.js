@@ -1,0 +1,31 @@
+export const TIPOS_INGREDIENTES = [
+  "Aperitivos",
+  "Bebidas",
+  "Cereal",
+  "Charcutería",
+  "Condimentos",
+  "Congelados",
+  "Desayunos",
+  "Droguería",
+  "Dulce",
+  "Especias",
+  "Fruta",
+  "Limpieza y hogar",
+  "Lácteo",
+  "Panadería",
+  "Platos preparados",
+  "Verdura",
+];
+export const ESTADOS_COMIDA = ["Disponible", "Faltante", "Urgente"];
+export const TIPOS_RECETA = [
+  "Plato principal",
+  "Bebidas",
+  "Snacks",
+  "Postres",
+  "Salsas",
+  "Guarniciones",
+  "Platos preparados",
+  "Restaurante",
+  "Desayuno",
+  "Entrantes o aperitivos",
+];

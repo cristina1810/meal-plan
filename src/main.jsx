@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import AppRoutes from "./routes.jsx";
 import { AuthProvider } from "./context/AuthContext";
 import { StoreProvider } from "./context/useGlobalReducer";
+import "./index.css";
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>

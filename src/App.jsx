@@ -1,5 +1,5 @@
 import { Outlet } from "react-router-dom";
-import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import { useAuth } from "./context/AuthContext";
 
 const App = () => {
@@ -8,7 +8,6 @@ const App = () => {
   return (
     <div className="app-container">
       {/* Mostrar Navbar solo si hay usuario */}
-      {user && <Navbar />}
 
       <main className="main-content">
         <Outlet />
