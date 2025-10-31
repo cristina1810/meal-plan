@@ -134,12 +134,14 @@ export default function RecipeCard({ recipe }) {
       </div>
       {recipe.tags.length > 0 ? (
         recipe.tags.map((tag) => (
-          <span
+          <div
             key={tag.id}
-            className="px-2.5 py-0.5 bg-[var(--pill-unselected-color)]/50 border-[var(--pill-unselected-color)] text-gray-400 font-medium rounded-full"
+            className="flex flex-wrap inline-flex items-center mt-2 gap-2 mx-1 "
           >
-            {tag.name}
-          </span>
+            <span className="px-2.5 py-0.5 bg-[var(--pill-unselected-color)]/50 border-[var(--pill-unselected-color)] text-gray-400 font-medium rounded-full">
+              {tag.name}
+            </span>
+          </div>
         ))
       ) : (
         <span className="text-gray-400 text-xs">Sin tags</span>
